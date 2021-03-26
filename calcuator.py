@@ -1,12 +1,15 @@
 '''
 Some code borrowed/modified from a given simple
 graphics library used for creating a canvas and drawing
-simple shapes
+simple shapes.
+
+I wanted to see if you can graph a parabola using those functions
 '''
 
 import tkinter
 from tkinter import *
 import time
+import re
 
 class graphics:
     def __init__(self, w, h, title):
@@ -45,7 +48,7 @@ class graphics:
     '''
 
     '''
-    START CALCULATOR FUNCTIONS
+    START MY CALCULATOR FUNCTIONS
     '''
     def input_section(self):
         '''
@@ -55,30 +58,30 @@ class graphics:
         '''
         self.a_val=1
         self.x_val=1
-        self.y_val = 1
+        self.y_val=1
 
         # section for getting (a) variable
         self.a_label = tkinter.Label(text="a (float)")
         self.a = tkinter.Entry(justify='center')
         self.a_label.pack()
-        self.a.insert(0,"0.01")
+        self.a.insert(0,"0.01")     # default entry box value
         self.a.pack()
 
         # section for getting (x) variable
         self.x_label = tkinter.Label(text="x-vertex (integer)")
         self.x = tkinter.Entry(justify='center')
         self.x_label.pack()
-        self.x.insert(0,"0")
+        self.x.insert(0,"0")        # default entry box value
         self.x.pack()
 
         # section for getting (y) variable
         self.y_label = tkinter.Label(text="y-vertex (integer)")
         self.y = tkinter.Entry(justify='center')
         self.y_label.pack()
-        self.y.insert(0,"0")
+        self.y.insert(0,"0")        # default entry box value
         self.y.pack()
 
-        # section for getting direction (choice) variable
+        # section for getting direction (choice) variable, radio buttons
         self.choice = IntVar()
         self.r1 = Radiobutton(text="left-right", variable=self.choice, value=1)
         self.r2 = Radiobutton(text="up-down", variable=self.choice, value=0)
@@ -89,6 +92,10 @@ class graphics:
         self.enter = tkinter.Button(text="Graph Parabola", command=self.get_result)
         self.enter.pack()
 
+        # in case of value error
+        self.error = tkinter.Label(text="")
+        self.error.pack()
+
     def get_result(self):
         '''
         Event handler for when "graph parabola" is clicked.
@@ -98,26 +105,29 @@ class graphics:
         gui = self
         width = self.w
 
-        gui.clear()
-        gui.rectangle(0,0,width+10,width+10,'white')
-        gui.draw_grid()
-
-        #get value from input
+        #get values from input
         a_val = self.a.get()
         x_val = self.x.get()
         y_val = self.y.get()
-        choice = self.choice.get()
+        val = self.choice.get()
 
-        print(choice)
-        choice = False
-        if choice==1:
-            choice = True
+        swap = False
+        if val==1:
+            swap = True         # False = Vertical parabola, True = horizontal
 
-        print(choice)
-        x = int(x_val)      # X vertex
-        y = int(y_val)      # Y Vertex
-        a = float(a_val)    # up or down
-        swap = choice       # False = Vertical parabola, True = horizontal
+        # check for valid values. Draw graph if valid. Give error msg if invalid
+        try :
+            x = int(x_val)      # X vertex
+            y = int(y_val)      # Y Vertex
+            a = float(a_val)    # up or down
+        except :
+            self.error.config(text = "\nAll values must\nbe numeric.", foreground="red")
+            return
+        else:
+            self.error.config(text = "")
+            gui.clear()
+            gui.rectangle(0,0,width+10,width+10,'white')
+            gui.draw_grid()
 
         # draw parabola
         self.parabolic(-a,x,y,swap)
@@ -143,16 +153,16 @@ class graphics:
         X = X+width//2      #X and Y should start at the center of canvas
         Y = -Y+width//2
 
-        # Gets a list of all x_coords and calculates y using the value
+        # Gets a list of all x_coords and calculates y using those values
         # Creates a list of x-y coordinate tuples
         if swap:
             x_coords = range(-width, width+1)
-            coords = [(x+Y,a*(x)**2+X) for x in x_coords]
+            coords = [(x+Y, a*(x)**2+X) for x in x_coords]
         else:
             x_coords = range(-width, width+1,1)
-            coords = [(x+X,a*(x)**2+Y) for x in x_coords]
+            coords = [(x+X, a*(x)**2+Y) for x in x_coords]
 
-        #Draws a circle at each coordinate tuple
+        # Draws a circle at each coordinate tuple
         for circle in coords:
             x2 = circle[0]
             y2 = circle[1]
@@ -182,9 +192,11 @@ class graphics:
         width = self.w
         scale = 50
 
-        #draw X and Y axis
+        # draw X and Y axis
         gui.line(0,width//2,width,width//2,'blue',2)
         gui.line(width//2,0,width//2,width,'blue',2)
+
+        # draw tick marks
         for mark in range(0,width+1):
             # uniform number width
             num_x = '{:4d}'.format(mark-width//2)
@@ -259,18 +271,6 @@ class graphics:
         r = self.canvas.create_rectangle(x, y, x+w, h+y, fill=fill, outline='')
         self.canvas.move(r, 0, 0)
 
-    def image(self, x, y, up_scale, down_scale, file_name):
-        ''' Draw an image on the canvas.
-        Specify x, y (top-left corner) and width / height.
-        '''
-        if file_name not in self.images:
-            self.images[file_name] = tkinter.PhotoImage(file=file_name)
-        self.images[file_name] = self.images[file_name].zoom(up_scale, up_scale)
-        self.images[file_name] = self.images[file_name].subsample(down_scale, down_scale)
-        i = self.canvas.create_image(x, y, anchor='nw', image=self.images[file_name])
-        self.canvas.move(i, 0, 0)
-        return self.images[file_name]
-
     def update(self):
         ''' Does an idle task update and regular update.
         '''
@@ -301,12 +301,14 @@ def main():
     width = 500
     scale = 50
 
+    # create canvas
     gui = graphics(width,width,"Parabolic Funtime")
     gui.rectangle(0,0,width+10,width+10,'white')
+
     # grid
     gui.draw_grid()
     gui.input_section()
-    gui.parabolic(-.01,0,0,False)
+    gui.parabolic(-.01,0,0,False)       # draws default parabola
 
 main()
 
